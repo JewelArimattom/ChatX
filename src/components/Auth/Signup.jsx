@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Sparkles, MessageCircle, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import { saveUser } from '../../utils/auth'
 
 const Signup = ({ onSignup, onSwitchToLogin }) => {
@@ -19,7 +19,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
       ...formData,
       [e.target.name]: e.target.value
     })
-    // Clear error when user types
     if (error) setError('')
   }
 
@@ -28,7 +27,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
     setError('')
     setSuccess('')
     
-    // Validation
     if (!formData.name.trim()) {
       setError('Please enter your name')
       return
@@ -51,7 +49,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
     
     setLoading(true)
     
-    // Save user to localStorage
     const result = saveUser({
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
@@ -72,7 +69,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 overflow-y-auto">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-20 left-20 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl"
@@ -107,7 +103,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md relative z-10 my-8"
       >
-        {/* Logo and branding */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
@@ -131,31 +126,28 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
           </p>
         </div>
 
-        {/* Signup card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
           className="card p-8 backdrop-blur-sm bg-slate-800/50"
         >
-          {/* Error message */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center space-x-2 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20"
+              className="flex items-center space-x-2 p-4 mb-5 rounded-xl bg-rose-500/10 border border-rose-500/20"
             >
               <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
               <p className="text-sm text-rose-400">{error}</p>
             </motion.div>
           )}
 
-          {/* Success message */}
           {success && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center space-x-2 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
+              className="flex items-center space-x-2 p-4 mb-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
             >
               <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
               <p className="text-sm text-emerald-400">{success}</p>
@@ -163,7 +155,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Full Name
@@ -184,7 +175,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
               </div>
             </div>
 
-            {/* Email input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address
@@ -205,7 +195,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
               </div>
             </div>
 
-            {/* Password input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Password
@@ -226,7 +215,6 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
               </div>
             </div>
 
-            {/* Confirm Password input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Confirm Password
@@ -246,12 +234,10 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
                 />
               </div>
             </div>
-disabled={loading}
-              whileHover={{ scale: loading ? 1 : 1.02 }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
-              className={`btn-primary w-full ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
+
+            <div className="flex items-start">
+              <input
+                id="terms"
                 type="checkbox"
                 className="mt-1 mr-2 rounded"
                 required
@@ -268,18 +254,17 @@ disabled={loading}
               </label>
             </div>
 
-            {/* Submit button */}
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn-primary w-full"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              className={`btn-primary w-full ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Create Account
+              {loading ? 'Creating Account...' : 'Create Account'}
             </motion.button>
           </form>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-700"></div>
@@ -289,7 +274,6 @@ disabled={loading}
             </div>
           </div>
 
-          {/* Social signup */}
           <div className="grid grid-cols-2 gap-4">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -316,7 +300,6 @@ disabled={loading}
             </motion.button>
           </div>
 
-          {/* Login link */}
           <div className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{' '}
             <button

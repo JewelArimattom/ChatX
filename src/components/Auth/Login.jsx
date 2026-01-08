@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Sparkles, MessageCircle, AlertCircle } from 'lucide-react'
+import { Mail, Lock, MessageCircle, AlertCircle } from 'lucide-react'
 import { validateLogin } from '../../utils/auth'
 
 const Login = ({ onLogin, onSwitchToSignup }) => {
@@ -113,10 +113,7 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email input */}{
-                    setEmail(e.target.value)
-                    if (error) setError('')
-                  }
+            {/* Email input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address
@@ -128,7 +125,10 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (error) setError('')
+                  }}
                   className="input-field pl-12"
                   placeholder="you@example.com"
                   required
@@ -145,13 +145,13 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-slate-500" />
                 </div>
-                <input{
-                    setPassword(e.target.value)
-                    if (error) setError('')
-                  }
+                <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (error) setError('')
+                  }}
                   className="input-field pl-12"
                   placeholder="••••••••"
                   required
@@ -167,18 +167,18 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
               </label>
               <a href="#" className="text-primary-500 hover:text-primary-400 transition-colors">
                 Forgot password?
+              </a>
+            </div>
+
+            {/* Submit button */}
+            <motion.button
+              type="submit"
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               className={`btn-primary w-full ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Signing In...' : 'Sign In'}utton
-              type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn-primary w-full"
-            >
-              Sign In
+              {loading ? 'Signing In...' : 'Sign In'}
             </motion.button>
           </form>
 
