@@ -176,7 +176,7 @@ const SocialFeed = () => {
                 </div>
 
                 {/* Post Image */}
-                <div className="relative aspect-square bg-slate-950">
+                <div className="relative w-full h-64 bg-slate-950">
                   <img
                     src={post.image}
                     alt="Post"

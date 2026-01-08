@@ -3,10 +3,11 @@ import Login from './components/Auth/Login'
 import Signup from './components/Auth/Signup'
 import Dashboard from './components/Dashboard/Dashboard'
 import ChatConversation from './components/Chat/ChatConversation'
+import LandingPage from './components/Landing/LandingPage'
 import { logoutUser, onAuthChange } from './utils/auth'
 
 function App() {
-  const [currentView, setCurrentView] = useState('login') // login, signup, dashboard, chat
+  const [currentView, setCurrentView] = useState('landing') // landing, login, signup, dashboard, chat
   const [selectedChat, setSelectedChat] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
 
@@ -50,6 +51,10 @@ function App() {
 
   return (
     <div className="h-full w-full">
+      {currentView === 'landing' && (
+        <LandingPage onGetStarted={() => setCurrentView('login')} />
+      )}
+      
       {currentView === 'login' && (
         <Login 
           onLogin={handleLogin} 
