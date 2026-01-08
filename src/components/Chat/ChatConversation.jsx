@@ -74,7 +74,7 @@ const ChatConversation = ({ chat, onBack }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onBack}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors lg:hidden"
+              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-slate-400" />
             </motion.button>
