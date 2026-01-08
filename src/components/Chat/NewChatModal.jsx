@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Users, UserPlus, Search, Hash, UserCircle2 } from 'lucide-react'
-import { listenToUsers, createOrGetDirectChat, createGroupChat, listenToAllGroups, joinGroupChat } from '../../services/chatService'
+import { listenToUsers, createOrGetDirectChat, createGroupChat, listenToAllGroups, joinGroupChat, addOrUpdateUser } from '../../services/chatService'
+import { getStoredUsers } from '../../utils/auth'
 
 const NewChatModal = ({ currentUser, onClose, onChatCreated }) => {
   const [activeTab, setActiveTab] = useState('users') // 'users', 'groups', 'create'
@@ -13,7 +14,26 @@ const NewChatModal = ({ currentUser, onClose, onChatCreated }) => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Listen to all users
+    // Sync localStorage users to Firebase first
+    const syncLocalStorageUsers = async () => {
+      const localUsers = getStoredUsers()
+      for (const user of localUsers) {
+        try {
+          await addOrUpdateUser(user.id, {
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
+            bio: user.bio || ''
+          })
+        } catch (error) {
+          console.error('Error syncing user to Firebase:', error)
+        }
+      }
+    }
+
+    syncLocalStorageUsers()
+
+    // Listen to all users from Firebase
     const unsubscribeUsers = listenToUsers((users) => {
       // Filter out current user
       const filteredUsers = users.filter(u => u.id !== currentUser?.id)

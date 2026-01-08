@@ -9,9 +9,10 @@ import {
   MoreVertical,
   Edit3,
   LogOut,
-  User
+  User,
+  Users
 } from 'lucide-react'
-import { listenToUserChats, addOrUpdateUser } from '../../services/chatService'
+import { listenToUserChats, addOrUpdateUser, listenToUsers, createOrGetDirectChat } from '../../services/chatService'
 import NewChatModal from '../Chat/NewChatModal'
 
 const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
@@ -19,6 +20,7 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
   const [showMenu, setShowMenu] = useState(false)
   const [showNewChat, setShowNewChat] = useState(false)
   const [chats, setChats] = useState([])
+  const [allUsers, setAllUsers] = useState([])
 
   useEffect(() => {
     if (!currentUser) return
@@ -32,16 +34,40 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
     })
 
     // Listen to user's chats
-    const unsubscribe = listenToUserChats(currentUser.id, (userChats) => {
+    const unsubscribeChats = listenToUserChats(currentUser.id, (userChats) => {
       setChats(userChats)
     })
 
-    return () => unsubscribe()
+    // Listen to all users
+    const unsubscribeUsers = listenToUsers((users) => {
+      const filteredUsers = users.filter(u => u.id !== currentUser?.id)
+      setAllUsers(filteredUsers)
+    })
+
+    return () => {
+      unsubscribeChats()
+      unsubscribeUsers()
+    }
   }, [currentUser])
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleStartChat = async (user) => {
+    try {
+      const chatId = await createOrGetDirectChat(currentUser.id, user.id)
+      onChatSelect({
+        id: chatId,
+        type: 'direct',
+        otherUser: user,
+        name: user.name,
+        avatar: user.avatar
+      })
+    } catch (error) {
+      console.error('Error starting chat:', error)
+    }
+  }
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
@@ -143,10 +169,54 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-3">
         {chats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <MessageCircle className="w-16 h-16 text-slate-700 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-300 mb-2">No chats yet</h3>
-            <p className="text-sm text-slate-500 mb-4">Start a conversation by clicking "New Chat"</p>
+          <div className="py-4">
+            <div className="text-center mb-6">
+              <MessageCircle className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-slate-300 mb-1">No chats yet</h3>
+              <p className="text-sm text-slate-500">Start a conversation with someone</p>
+            </div>
+            
+            {/* Available Users */}
+            {allUsers.length > 0 && (
+              <div>
+                <div className="flex items-center space-x-2 px-3 mb-3">
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <h4 className="text-sm font-semibold text-slate-400">Available Users ({allUsers.length})</h4>
+                </div>
+                <div className="space-y-1">
+                  {allUsers.slice(0, 10).map((user, index) => (
+                    <motion.button
+                      key={user.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => handleStartChat(user)}
+                      className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
+                               cursor-pointer transition-all group"
+                    >
+                      <img
+                        src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                        alt={user.name}
+                        className="w-12 h-12 rounded-full ring-2 ring-slate-700 group-hover:ring-primary-500 transition-all"
+                      />
+                      <div className="flex-1 text-left">
+                        <h3 className="font-semibold text-slate-100">{user.name}</h3>
+                        <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                      </div>
+                    </motion.button>
+                  ))}
+                  {allUsers.length > 10 && (
+                    <button
+                      onClick={() => setShowNewChat(true)}
+                      className="w-full py-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                    >
+                      View all {allUsers.length} users
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-1">

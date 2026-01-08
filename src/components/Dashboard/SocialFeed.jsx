@@ -11,19 +11,24 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  Trash2
 } from 'lucide-react'
-import { stories, posts as initialPosts } from '../../data/mockData'
+import { stories as initialStories, posts as initialPosts } from '../../data/mockData'
 import StoryViewer from '../Story/StoryViewer'
 import CreatePostModal from '../Post/CreatePostModal'
+import AddStoryModal from '../Story/AddStoryModal'
 
 const SocialFeed = ({ onProfileClick }) => {
+  const [stories, setStories] = useState(initialStories)
   const [posts, setPosts] = useState(initialPosts)
   const [likedPosts, setLikedPosts] = useState(new Set([1, 3, 5]))
   const [savedPosts, setSavedPosts] = useState(new Set())
   const [selectedStory, setSelectedStory] = useState(null)
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0)
   const [showCreatePost, setShowCreatePost] = useState(false)
+  const [showAddStory, setShowAddStory] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   // Filter out stories that have content (not "your story")
   const viewableStories = stories.filter(s => s.content)
@@ -76,6 +81,11 @@ const SocialFeed = ({ onProfileClick }) => {
       }
       return newSet
     })
+  }
+
+  const handleDeletePost = (postId) => {
+    setPosts(posts.filter(p => p.id !== postId))
+    setDeleteConfirm(null)
   }
 
   return (
@@ -141,7 +151,7 @@ const SocialFeed = ({ onProfileClick }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ scale: 1.05 }}
-                onClick={() => story.content && openStory(story)}
+                onClick={() => story.id === 'your-story' ? setShowAddStory(true) : story.content && openStory(story)}
                 className="cursor-pointer"
               >
                 <div className="relative">
@@ -209,9 +219,32 @@ const SocialFeed = ({ onProfileClick }) => {
                       <p className="text-xs text-slate-500">{post.user.username}</p>
                     </div>
                   </div>
-                  <button className="p-2 hover:bg-slate-700 rounded-lg transition-colors">
-                    <MoreHorizontal className="w-5 h-5 text-slate-400" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setDeleteConfirm(deleteConfirm === post.id ? null : post.id)}
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <MoreHorizontal className="w-5 h-5 text-slate-400" />
+                    </button>
+                    <AnimatePresence>
+                      {deleteConfirm === post.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                          className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden z-10"
+                        >
+                          <button
+                            onClick={() => handleDeletePost(post.id)}
+                            className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-slate-700 transition-colors text-left text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="text-sm font-medium">Delete Post</span>
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 {/* Post Image */}
@@ -334,6 +367,22 @@ const SocialFeed = ({ onProfileClick }) => {
             onPostCreated={(newPost) => {
               setPosts([newPost, ...posts])
               setShowCreatePost(false)
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Add Story Modal */}
+      <AnimatePresence>
+        {showAddStory && (
+          <AddStoryModal
+            onClose={() => setShowAddStory(false)}
+            onStoryAdded={(newStory) => {
+              // Replace "your story" with the new story
+              setStories(stories.map(s => 
+                s.id === 'your-story' ? newStory : s
+              ))
+              setShowAddStory(false)
             }}
           />
         )}

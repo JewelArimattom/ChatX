@@ -54,7 +54,7 @@ function App() {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-screen w-screen overflow-hidden">
       {currentView === 'landing' && (
         <LandingPage onGetStarted={() => setCurrentView('login')} />
       )}
@@ -75,7 +75,7 @@ function App() {
         />
       )}
       
-      {currentView === 'dashboard' && (
+      {currentView === 'dashboard' && currentUser && (
         <Dashboard 
           currentUser={currentUser}
           onChatSelect={handleChatSelect}
@@ -84,14 +84,14 @@ function App() {
         />
       )}
       
-      {currentView === 'chat' && selectedChat && (
+      {currentView === 'chat' && selectedChat && currentUser && (
         <ChatConversation 
           chat={selectedChat}
           onBack={handleBackToDashboard}
         />
       )}
 
-      {currentView === 'profile' && (
+      {currentView === 'profile' && currentUser && (
         <ProfilePage onBack={handleBackToDashboard} />
       )}
     </div>

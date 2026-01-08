@@ -15,11 +15,15 @@ import {
 } from 'lucide-react'
 import { listenToMessages, sendMessage } from '../../services/chatService'
 import { getCurrentUser } from '../../utils/auth'
+import VideoCall from '../Call/VideoCall'
+import AudioCall from '../Call/AudioCall'
 
 const ChatConversation = ({ chat, onBack }) => {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [showVideoCall, setShowVideoCall] = useState(false)
+  const [showAudioCall, setShowAudioCall] = useState(false)
   const messagesEndRef = useRef(null)
   const currentUser = getCurrentUser()
 
@@ -95,6 +99,7 @@ const ChatConversation = ({ chat, onBack }) => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAudioCall(true)}
               className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
             >
               <Phone className="w-5 h-5 text-slate-400" />
@@ -102,6 +107,7 @@ const ChatConversation = ({ chat, onBack }) => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowVideoCall(true)}
               className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
             >
               <Video className="w-5 h-5 text-slate-400" />
@@ -290,6 +296,32 @@ const ChatConversation = ({ chat, onBack }) => {
           </div>
         </form>
       </div>
+
+      {/* Video Call Modal */}
+      <AnimatePresence>
+        {showVideoCall && (
+          <VideoCall
+            contact={{
+              name: chat.type === 'group' ? chat.name : (chat.otherUser?.name || chat.name),
+              avatar: chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.name}`
+            }}
+            onClose={() => setShowVideoCall(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Audio Call Modal */}
+      <AnimatePresence>
+        {showAudioCall && (
+          <AudioCall
+            contact={{
+              name: chat.type === 'group' ? chat.name : (chat.otherUser?.name || chat.name),
+              avatar: chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.name}`
+            }}
+            onClose={() => setShowAudioCall(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
