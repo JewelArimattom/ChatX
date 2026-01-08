@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, 
@@ -11,11 +11,33 @@ import {
   LogOut,
   User
 } from 'lucide-react'
-import { chats } from '../../data/mockData'
+import { listenToUserChats, addOrUpdateUser } from '../../services/chatService'
+import NewChatModal from '../Chat/NewChatModal'
 
-const ChatPanel = ({ onChatSelect, onLogout }) => {
+const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showMenu, setShowMenu] = useState(false)
+  const [showNewChat, setShowNewChat] = useState(false)
+  const [chats, setChats] = useState([])
+
+  useEffect(() => {
+    if (!currentUser) return
+
+    // Add/update user in Firestore
+    addOrUpdateUser(currentUser.id, {
+      name: currentUser.name,
+      email: currentUser.email,
+      avatar: currentUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`,
+      bio: currentUser.bio || ''
+    })
+
+    // Listen to user's chats
+    const unsubscribe = listenToUserChats(currentUser.id, (userChats) => {
+      setChats(userChats)
+    })
+
+    return () => unsubscribe()
+  }, [currentUser])
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,6 +117,7 @@ const ChatPanel = ({ onChatSelect, onLogout }) => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => setShowNewChat(true)}
           className="flex-1 py-2 rounded-lg bg-gradient-primary text-white text-sm font-semibold
                    shadow-glow hover:shadow-xl transition-all flex items-center justify-center space-x-2"
         >
@@ -119,66 +142,83 @@ const ChatPanel = ({ onChatSelect, onLogout }) => {
 
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-3">
-        <div className="space-y-1">
-          {filteredChats.map((chat, index) => (
-            <motion.div
-              key={chat.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => onChatSelect(chat)}
-              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
-                       cursor-pointer transition-all group"
-            >
-              {/* Avatar */}
-              <div className="relative flex-shrink-0">
-                <img
-                  src={chat.avatar}
-                  alt={chat.name}
-                  className="w-12 h-12 rounded-full ring-2 ring-slate-700 group-hover:ring-primary-500 transition-all"
-                />
-                {chat.online && (
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full 
-                                border-2 border-slate-900"></div>
-                )}
-                {chat.unread > 0 && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full 
-                             flex items-center justify-center text-xs font-bold text-white"
-                  >
-                    {chat.unread}
-                  </motion.div>
-                )}
-              </div>
+        {chats.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-6">
+            <MessageCircle className="w-16 h-16 text-slate-700 mb-4" />
+            <h3 className="text-lg font-semibold text-slate-300 mb-2">No chats yet</h3>
+            <p className="text-sm text-slate-500 mb-4">Start a conversation by clicking "New Chat"</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {chats.map((chat, index) => {
+              const isGroup = chat.type === 'group'
+              const displayName = isGroup ? chat.name : (chat.otherUser?.name || 'Unknown')
+              const displayAvatar = isGroup ? chat.avatar : (chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`)
+              
+              return (
+                <motion.div
+                  key={chat.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => onChatSelect(chat)}
+                  className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
+                           cursor-pointer transition-all group"
+                >
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={displayAvatar}
+                      alt={displayName}
+                      className="w-12 h-12 rounded-full ring-2 ring-slate-700 group-hover:ring-primary-500 transition-all"
+                    />
+                    {isGroup && (
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full 
+                                    border-2 border-slate-900 flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
 
-              {/* Chat info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-1 mb-1">
-                  <h3 className="font-semibold text-slate-100 truncate">
-                    {chat.name}
-                  </h3>
-                  {chat.verified && (
-                    <svg className="w-4 h-4 text-primary-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  {/* Chat info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-1 mb-1">
+                      <h3 className="font-semibold text-slate-100 truncate">
+                        {displayName}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-slate-400 truncate">
+                      {chat.lastMessage || 'No messages yet'}
+                    </p>
+                  </div>
+
+                  {/* Timestamp */}
+                  {chat.lastMessageTime && (
+                    <div className="flex-shrink-0 text-xs text-slate-500">
+                      {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   )}
-                </div>
-                <p className="text-sm text-slate-400 truncate">
-                  {chat.lastMessage}
-                </p>
-              </div>
-
-              {/* Timestamp */}
-              <div className="flex-shrink-0 text-xs text-slate-500">
-                {chat.timestamp}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
       </div>
+
+      {/* New Chat Modal */}
+      <AnimatePresence>
+        {showNewChat && (
+          <NewChatModal
+            currentUser={currentUser}
+            onClose={() => setShowNewChat(false)}
+            onChatCreated={(chat) => {
+              onChatSelect(chat)
+              setShowNewChat(false)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

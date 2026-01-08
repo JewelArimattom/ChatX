@@ -13,54 +13,45 @@ import {
   Search,
   Image as ImageIcon
 } from 'lucide-react'
-import { messages as mockMessages } from '../../data/mockData'
+import { listenToMessages, sendMessage } from '../../services/chatService'
+import { getCurrentUser } from '../../utils/auth'
 
 const ChatConversation = ({ chat, onBack }) => {
-  const [messages, setMessages] = useState(mockMessages)
+  const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef(null)
+  const currentUser = getCurrentUser()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
+    if (!chat?.id) return
+
+    // Listen to messages in this chat
+    const unsubscribe = listenToMessages(chat.id, (newMessages) => {
+      setMessages(newMessages)
+    })
+
+    return () => unsubscribe()
+  }, [chat?.id])
+
+  useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault()
-    if (newMessage.trim()) {
-      const message = {
-        id: messages.length + 1,
-        sender: 'me',
-        text: newMessage,
-        timestamp: new Date().toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit', 
-          hour12: true 
-        })
+    if (newMessage.trim() && currentUser) {
+      try {
+        await sendMessage(chat.id, currentUser.id, currentUser.name, newMessage.trim())
+        setNewMessage('')
+      } catch (error) {
+        console.error('Error sending message:', error)
+        alert('Failed to send message')
       }
-      setMessages([...messages, message])
-      setNewMessage('')
-      
-      // Simulate typing indicator
-      setIsTyping(true)
-      setTimeout(() => {
-        setIsTyping(false)
-        setMessages(prev => [...prev, {
-          id: prev.length + 1,
-          sender: 'them',
-          text: 'That sounds great! 👍',
-          timestamp: new Date().toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit', 
-            hour12: true 
-          }),
-          avatar: chat.avatar
-        }])
-      }, 2000)
     }
   }
 
@@ -82,26 +73,19 @@ const ChatConversation = ({ chat, onBack }) => {
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <img
-                  src={chat.avatar}
-                  alt={chat.name}
+                  src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.name}`}
+                  alt={chat.name || chat.otherUser?.name}
                   className="w-11 h-11 rounded-full ring-2 ring-slate-700"
                 />
-                {chat.online && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full 
-                                border-2 border-slate-900"></div>
-                )}
               </div>
               <div>
                 <div className="flex items-center space-x-1">
-                  <h2 className="font-semibold text-slate-100">{chat.name}</h2>
-                  {chat.verified && (
-                    <svg className="w-4 h-4 text-primary-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  )}
+                  <h2 className="font-semibold text-slate-100">
+                    {chat.type === 'group' ? chat.name : (chat.otherUser?.name || chat.name)}
+                  </h2>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {chat.online ? 'Active now' : 'Offline'}
+                  {chat.type === 'group' ? `${(chat.participants || []).length} members` : 'Active now'}
                 </p>
               </div>
             </div>
@@ -151,35 +135,47 @@ const ChatConversation = ({ chat, onBack }) => {
           </div>
 
           {/* Messages */}
-          {messages.map((message, index) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`flex items-end space-x-2 max-w-[70%] ${
-                message.sender === 'me' ? 'flex-row-reverse space-x-reverse' : 'flex-row'
-              }`}>
-                {message.sender === 'them' && (
-                  <img
-                    src={message.avatar}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full flex-shrink-0"
-                  />
-                )}
-                <div className={`flex flex-col ${message.sender === 'me' ? 'items-end' : 'items-start'}`}>
-                  <div className={message.sender === 'me' ? 'chat-bubble-sent' : 'chat-bubble-received'}>
-                    <p className="text-sm leading-relaxed">{message.text}</p>
+          {messages.map((message, index) => {
+            const isMine = message.senderId === currentUser?.id
+            const timeString = message.timestamp ? new Date(message.timestamp).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit', 
+              hour12: true 
+            }) : ''
+
+            return (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`flex items-end space-x-2 max-w-[70%] ${
+                  isMine ? 'flex-row-reverse space-x-reverse' : 'flex-row'
+                }`}>
+                  {!isMine && (
+                    <img
+                      src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
+                      alt="Avatar"
+                      className="w-8 h-8 rounded-full flex-shrink-0"
+                    />
+                  )}
+                  <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                    {!isMine && chat.type === 'group' && (
+                      <span className="text-xs text-slate-500 mb-1 px-2">{message.senderName}</span>
+                    )}
+                    <div className={isMine ? 'chat-bubble-sent' : 'chat-bubble-received'}>
+                      <p className="text-sm leading-relaxed">{message.text}</p>
+                    </div>
+                    <span className="text-xs text-slate-500 mt-1 px-2">
+                      {timeString}
+                    </span>
                   </div>
-                  <span className="text-xs text-slate-500 mt-1 px-2">
-                    {message.timestamp}
-                  </span>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          })}
 
           {/* Typing indicator */}
           <AnimatePresence>
