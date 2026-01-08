@@ -219,7 +219,9 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-slate-100 truncate">{u.displayName || u.email}</h3>
-                <p className="text-sm text-slate-400 truncate">{u.email}</p>
+                <p className="text-sm text-slate-400 truncate">
+                  {u.online ? 'Online' : 'Offline'}{u.email ? ` • ${u.email}` : ''}
+                </p>
               </div>
             </motion.div>
           ))}

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as THREE from 'three'
 import { 
   ArrowLeft, 
   Phone, 
@@ -20,6 +21,7 @@ const ChatConversation = ({ chat, currentUser, onBack }) => {
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef(null)
+  const bgMountRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -39,6 +41,71 @@ const ChatConversation = ({ chat, currentUser, onBack }) => {
     })
     return () => unsub?.()
   }, [chat?.id])
+
+  useEffect(() => {
+    const mount = bgMountRef.current
+    if (!mount) return
+
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100)
+    camera.position.z = 8
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    renderer.setClearColor(0x000000, 0)
+    mount.appendChild(renderer.domElement)
+
+    const count = 700
+    const positions = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3
+      positions[i3] = (Math.random() - 0.5) * 18
+      positions[i3 + 1] = (Math.random() - 0.5) * 12
+      positions[i3 + 2] = (Math.random() - 0.5) * 10
+    }
+
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+
+    const material = new THREE.PointsMaterial({
+      size: 0.03,
+      color: 0x94a3b8,
+      transparent: true,
+      opacity: 0.35
+    })
+
+    const points = new THREE.Points(geometry, material)
+    scene.add(points)
+
+    const resize = () => {
+      const w = mount.clientWidth || 1
+      const h = mount.clientHeight || 1
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+      renderer.setSize(w, h, false)
+    }
+
+    resize()
+    window.addEventListener('resize', resize)
+
+    let raf = 0
+    const animate = () => {
+      raf = window.requestAnimationFrame(animate)
+      points.rotation.y += 0.0009
+      points.rotation.x += 0.00035
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    return () => {
+      window.removeEventListener('resize', resize)
+      window.cancelAnimationFrame(raf)
+      geometry.dispose()
+      material.dispose()
+      renderer.dispose()
+      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement)
+    }
+  }, [])
 
   const formatTime = (ts) => {
     try {
@@ -70,7 +137,12 @@ const ChatConversation = ({ chat, currentUser, onBack }) => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-slate-900">
+    <div className="relative h-full w-full flex flex-col bg-slate-900 overflow-hidden">
+      <div
+        ref={bgMountRef}
+        className="absolute inset-0 pointer-events-none opacity-40"
+        aria-hidden="true"
+      />
       {/* Chat Header */}
       <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm">
         <div className="flex items-center justify-between">

@@ -4,7 +4,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 
 const userToSessionUser = (firebaseUser, profile) => {
@@ -36,10 +36,55 @@ const ensureUserProfile = async (firebaseUser, displayNameOverride) => {
     displayName,
     email: firebaseUser.email || '',
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
+    online: false,
+    lastSeen: serverTimestamp(),
     createdAt: serverTimestamp()
   }
   await setDoc(ref, profile)
   return profile
+}
+
+const setPresence = async (uid, online) => {
+  try {
+    await updateDoc(doc(db, 'users', uid), {
+      online,
+      lastSeen: serverTimestamp()
+    })
+  } catch {
+    // ignore presence failures (e.g., rules not allowing updates)
+  }
+}
+
+const startPresence = (uid) => {
+  let stopped = false
+
+  setPresence(uid, true)
+
+  const interval = window.setInterval(() => {
+    if (stopped) return
+    setPresence(uid, true)
+  }, 30000)
+
+  const onBeforeUnload = () => {
+    // best-effort
+    setPresence(uid, false)
+  }
+
+  const onVisibilityChange = () => {
+    if (document.visibilityState === 'visible') setPresence(uid, true)
+    else setPresence(uid, false)
+  }
+
+  window.addEventListener('beforeunload', onBeforeUnload)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+
+  return () => {
+    stopped = true
+    window.clearInterval(interval)
+    window.removeEventListener('beforeunload', onBeforeUnload)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    setPresence(uid, false)
+  }
 }
 
 // Backwards-compatible no-op for old localStorage behavior
@@ -92,19 +137,28 @@ export const getCurrentUser = () => {
 }
 
 export const onAuthChange = (callback) => {
+  let stopPresenceFn = null
   return onAuthStateChanged(auth, async (firebaseUser) => {
+    if (stopPresenceFn) {
+      stopPresenceFn()
+      stopPresenceFn = null
+    }
+
     if (!firebaseUser) {
       callback(null)
       return
     }
 
     const profile = await ensureUserProfile(firebaseUser)
+    stopPresenceFn = startPresence(firebaseUser.uid)
     callback(userToSessionUser(firebaseUser, profile))
   })
 }
 
 export const logoutUser = async () => {
   try {
+    const uid = auth.currentUser?.uid
+    if (uid) await setPresence(uid, false)
     await signOut(auth)
     return { success: true }
   } catch (error) {

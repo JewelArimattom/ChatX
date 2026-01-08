@@ -25,13 +25,16 @@ export const listenToUsers = (onUsers) => {
 }
 
 export const listenToGroups = (onGroups) => {
-  const q = query(
-    collection(db, 'conversations'),
-    where('type', '==', 'group'),
-    orderBy('createdAt', 'desc')
-  )
+  // Intentionally no orderBy here to avoid requiring a composite index.
+  const q = query(collection(db, 'conversations'), where('type', '==', 'group'))
   return onSnapshot(q, (snap) => {
-    const groups = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const groups = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const at = a?.createdAt?.toMillis ? a.createdAt.toMillis() : 0
+        const bt = b?.createdAt?.toMillis ? b.createdAt.toMillis() : 0
+        return bt - at
+      })
     onGroups(groups)
   })
 }
