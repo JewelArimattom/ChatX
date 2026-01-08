@@ -38,7 +38,7 @@ export const saveUser = (userData) => {
     const users = getStoredUsers()
     
     // Check if email already exists
-    const existingUser = users.find(u => u.email === userData.email)
+    const existingUser = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase())
     if (existingUser) {
       return { success: false, error: 'Email already registered' }
     }
@@ -47,7 +47,7 @@ export const saveUser = (userData) => {
     const newUser = {
       id: Date.now().toString(),
       name: userData.name,
-      email: userData.email,
+      email: userData.email.toLowerCase(),
       password: userData.password, // In production, this should be hashed
       createdAt: new Date().toISOString(),
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`
@@ -55,6 +55,18 @@ export const saveUser = (userData) => {
     
     users.push(newUser)
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(users))
+    
+    // Also save to session for immediate login
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      avatar: newUser.avatar,
+      loggedInAt: new Date().toISOString()
+    }))
+    
+    console.log('User saved successfully:', newUser.email)
+    console.log('All users:', users)
     
     return { success: true, user: newUser }
   } catch (error) {
@@ -67,7 +79,10 @@ export const saveUser = (userData) => {
 export const validateLogin = (email, password) => {
   try {
     const users = getStoredUsers()
-    const user = users.find(u => u.email === email && u.password === password)
+    console.log('Attempting login for:', email)
+    console.log('Stored users:', users.map(u => u.email))
+    
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password)
     
     if (user) {
       // Save current session
@@ -76,11 +91,14 @@ export const validateLogin = (email, password) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        bio: user.bio,
         loggedInAt: new Date().toISOString()
       }))
+      console.log('Login successful for:', user.email)
       return { success: true, user }
     }
     
+    console.log('Login failed - no matching user found')
     return { success: false, error: 'Invalid email or password' }
   } catch (error) {
     console.error('Error validating login:', error)

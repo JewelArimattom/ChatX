@@ -6,11 +6,14 @@ import { getCurrentUser } from '../../utils/auth'
 const ProfilePage = ({ onBack }) => {
   const [currentUser, setCurrentUser] = useState(getCurrentUser())
   const [isEditingBio, setIsEditingBio] = useState(false)
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [bio, setBio] = useState(currentUser?.bio || "✨ Living my best life | 📸 Photography enthusiast | 🌍 Travel lover")
   const [tempBio, setTempBio] = useState(bio)
+  const [tempName, setTempName] = useState(currentUser?.name || '')
   const [activeTab, setActiveTab] = useState('posts')
   const [viewingProfilePic, setViewingProfilePic] = useState(false)
   const fileInputRef = useRef(null)
+  const editFileInputRef = useRef(null)
 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0]
@@ -50,6 +53,52 @@ const ProfilePage = ({ onBack }) => {
   const handleCancelBio = () => {
     setTempBio(bio)
     setIsEditingBio(false)
+  }
+
+  const handleOpenEditProfile = () => {
+    setTempName(currentUser?.name || '')
+    setTempBio(bio)
+    setIsEditingProfile(true)
+  }
+
+  const handleSaveProfile = () => {
+    const updatedUser = { 
+      ...currentUser, 
+      name: tempName.trim() || currentUser?.name,
+      bio: tempBio 
+    }
+    setCurrentUser(updatedUser)
+    setBio(tempBio)
+    
+    // Update in localStorage
+    const storedUsers = JSON.parse(localStorage.getItem('chatx_users') || '[]')
+    const userIndex = storedUsers.findIndex(u => u.email === currentUser.email)
+    if (userIndex !== -1) {
+      storedUsers[userIndex] = updatedUser
+      localStorage.setItem('chatx_users', JSON.stringify(storedUsers))
+      sessionStorage.setItem('chatx_current_user', JSON.stringify(updatedUser))
+    }
+    setIsEditingProfile(false)
+  }
+
+  const handleEditProfilePicChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const updatedUser = { ...currentUser, avatar: e.target.result }
+        setCurrentUser(updatedUser)
+        // Update in localStorage
+        const storedUsers = JSON.parse(localStorage.getItem('chatx_users') || '[]')
+        const userIndex = storedUsers.findIndex(u => u.email === currentUser.email)
+        if (userIndex !== -1) {
+          storedUsers[userIndex] = updatedUser
+          localStorage.setItem('chatx_users', JSON.stringify(storedUsers))
+          sessionStorage.setItem('chatx_current_user', JSON.stringify(updatedUser))
+        }
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   // Mock posts data
@@ -173,7 +222,10 @@ const ProfilePage = ({ onBack }) => {
               </div>
 
               {/* Edit Profile Button */}
-              <button className="w-full md:w-auto px-6 py-2 rounded-lg bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 transition-colors">
+              <button 
+                onClick={handleOpenEditProfile}
+                className="w-full md:w-auto px-6 py-2 rounded-lg bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 transition-colors"
+              >
                 Edit Profile
               </button>
             </div>
@@ -242,6 +294,131 @@ const ProfilePage = ({ onBack }) => {
           )}
         </div>
       </div>
+
+      {/* Profile Picture Viewer Modal */}
+      <AnimatePresence>
+        {viewingProfilePic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setViewingProfilePic(false)}
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setViewingProfilePic(false)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-slate-800/50 hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Profile Picture */}
+            <motion.img
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              src={currentUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.name}`}
+              alt={currentUser?.name}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+            />
+
+            {/* User Name */}
+            <div className="absolute bottom-8 text-center">
+              <p className="text-white text-xl font-semibold">{currentUser?.name}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditingProfile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsEditingProfile(false)}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 rounded-2xl p-6 w-full max-w-md border border-slate-800"
+            >
+              <h2 className="text-xl font-bold text-slate-100 mb-6">Edit Profile</h2>
+
+              {/* Profile Picture Edit */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <img
+                    src={currentUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.name}`}
+                    alt={currentUser?.name}
+                    className="w-24 h-24 rounded-full ring-4 ring-slate-700 object-cover"
+                  />
+                  <button
+                    onClick={() => editFileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-2 rounded-full bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditProfilePicChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Name Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                  placeholder="Your name"
+                />
+              </div>
+
+              {/* Bio Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Bio</label>
+                <textarea
+                  value={tempBio}
+                  onChange={(e) => setTempBio(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
+                  rows="3"
+                  placeholder="Tell us about yourself"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleSaveProfile}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-primary text-white font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+                >
+                  <Check className="w-5 h-5" />
+                  <span>Save Changes</span>
+                </button>
+                <button
+                  onClick={() => setIsEditingProfile(false)}
+                  className="px-4 py-3 rounded-lg bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
