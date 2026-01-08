@@ -156,15 +156,38 @@ export const listenToUserChats = (userId, callback) => {
     orderBy('lastMessageTime', 'desc')
   );
   
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, async (snapshot) => {
     const chats = [];
-    snapshot.forEach((doc) => {
-      chats.push({
-        id: doc.id,
-        ...doc.data(),
-        lastMessageTime: doc.data().lastMessageTime?.toDate()
-      });
-    });
+    
+    for (const chatDoc of snapshot.docs) {
+      const chatData = chatDoc.data();
+      const chat = {
+        id: chatDoc.id,
+        ...chatData,
+        lastMessageTime: chatData.lastMessageTime?.toDate()
+      };
+
+      // For direct chats, fetch the other user's info
+      if (chatData.type === 'direct') {
+        const otherUserId = chatData.participants.find(id => id !== userId);
+        if (otherUserId) {
+          try {
+            const otherUserDoc = await getDoc(doc(db, 'users', otherUserId));
+            if (otherUserDoc.exists()) {
+              chat.otherUser = {
+                id: otherUserDoc.id,
+                ...otherUserDoc.data()
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching other user:', error);
+          }
+        }
+      }
+      
+      chats.push(chat);
+    }
+    
     callback(chats);
   });
 };
@@ -203,6 +226,25 @@ export const listenToUsers = (callback) => {
       });
     });
     callback(users);
+  });
+};
+
+// Listen to all groups (real-time)
+export const listenToAllGroups = (callback) => {
+  const chatsRef = collection(db, 'chats');
+  const q = query(chatsRef, where('type', '==', 'group'), orderBy('createdAt', 'desc'));
+  
+  return onSnapshot(q, (snapshot) => {
+    const groups = [];
+    snapshot.forEach((doc) => {
+      groups.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+        lastMessageTime: doc.data().lastMessageTime?.toDate()
+      });
+    });
+    callback(groups);
   });
 };
 

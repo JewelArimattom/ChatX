@@ -125,11 +125,11 @@ const ChatConversation = ({ chat, onBack }) => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-6">
-        <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6 bg-gradient-to-b from-slate-900 to-slate-950">
+        <div className="max-w-3xl mx-auto space-y-3">
           {/* Date divider */}
           <div className="flex items-center justify-center mb-6">
-            <div className="px-4 py-1.5 rounded-full bg-slate-800 text-xs text-slate-400">
+            <div className="px-4 py-1.5 rounded-full bg-slate-800/60 backdrop-blur-sm text-xs text-slate-400 font-medium">
               Today
             </div>
           </div>
@@ -148,27 +148,31 @@ const ChatConversation = ({ chat, onBack }) => {
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.02 }}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`flex items-end space-x-2 max-w-[70%] ${
-                  isMine ? 'flex-row-reverse space-x-reverse' : 'flex-row'
+                <div className={`flex items-end gap-2 max-w-[75%] ${
+                  isMine ? 'flex-row-reverse' : 'flex-row'
                 }`}>
                   {!isMine && (
                     <img
                       src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
                       alt="Avatar"
-                      className="w-8 h-8 rounded-full flex-shrink-0"
+                      className="w-8 h-8 rounded-full flex-shrink-0 ring-2 ring-slate-800"
                     />
                   )}
                   <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                     {!isMine && chat.type === 'group' && (
-                      <span className="text-xs text-slate-500 mb-1 px-2">{message.senderName}</span>
+                      <span className="text-xs text-slate-400 mb-1 px-3 font-medium">{message.senderName}</span>
                     )}
-                    <div className={isMine ? 'chat-bubble-sent' : 'chat-bubble-received'}>
-                      <p className="text-sm leading-relaxed">{message.text}</p>
+                    <div className={`${
+                      isMine 
+                        ? 'bg-gradient-to-br from-primary-600 to-primary-500 text-white rounded-2xl rounded-br-md' 
+                        : 'bg-slate-800 text-slate-100 rounded-2xl rounded-bl-md'
+                    } px-4 py-2.5 shadow-lg max-w-full`}>
+                      <p className="text-sm leading-relaxed break-words">{message.text}</p>
                     </div>
-                    <span className="text-xs text-slate-500 mt-1 px-2">
+                    <span className="text-xs text-slate-500 mt-1.5 px-1">
                       {timeString}
                     </span>
                   </div>
@@ -219,9 +223,9 @@ const ChatConversation = ({ chat, onBack }) => {
       </div>
 
       {/* Message Input */}
-      <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm">
-        <form onSubmit={handleSend} className="max-w-4xl mx-auto">
-          <div className="flex items-end space-x-3">
+      <div className="px-4 py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md">
+        <form onSubmit={handleSend} className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-3">
             {/* Attachment buttons */}
             <div className="flex items-center space-x-2">
               <motion.button
@@ -249,9 +253,9 @@ const ChatConversation = ({ chat, onBack }) => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="w-full px-5 py-3 pr-12 rounded-2xl bg-slate-800 border border-slate-700 
+                className="w-full px-5 py-3.5 pr-12 rounded-2xl bg-slate-800/80 border border-slate-700/50 
                          text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 
-                         focus:ring-primary-500/50 focus:border-transparent transition-all"
+                         focus:ring-primary-500/50 focus:border-primary-500/50 transition-all shadow-sm"
               />
               <button
                 type="button"

@@ -13,14 +13,17 @@ import {
   ChevronRight,
   User
 } from 'lucide-react'
-import { stories, posts } from '../../data/mockData'
+import { stories, posts as initialPosts } from '../../data/mockData'
 import StoryViewer from '../Story/StoryViewer'
+import CreatePostModal from '../Post/CreatePostModal'
 
 const SocialFeed = ({ onProfileClick }) => {
+  const [posts, setPosts] = useState(initialPosts)
   const [likedPosts, setLikedPosts] = useState(new Set([1, 3, 5]))
   const [savedPosts, setSavedPosts] = useState(new Set())
   const [selectedStory, setSelectedStory] = useState(null)
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0)
+  const [showCreatePost, setShowCreatePost] = useState(false)
 
   // Filter out stories that have content (not "your story")
   const viewableStories = stories.filter(s => s.content)
@@ -115,6 +118,7 @@ const SocialFeed = ({ onProfileClick }) => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreatePost(true)}
               className="px-4 py-2 rounded-xl bg-gradient-primary text-white font-semibold
                        shadow-glow hover:shadow-xl transition-all flex items-center space-x-2"
             >
@@ -322,7 +326,18 @@ const SocialFeed = ({ onProfileClick }) => {
           />
         )}
       </AnimatePresence>
-    </div>
+      {/* Create Post Modal */}
+      <AnimatePresence>
+        {showCreatePost && (
+          <CreatePostModal
+            onClose={() => setShowCreatePost(false)}
+            onPostCreated={(newPost) => {
+              setPosts([newPost, ...posts])
+              setShowCreatePost(false)
+            }}
+          />
+        )}
+      </AnimatePresence>    </div>
   )
 }
 
