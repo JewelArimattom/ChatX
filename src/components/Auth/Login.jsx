@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Lock, MessageCircle, AlertCircle } from 'lucide-react'
+import { Mail, Lock, MessageCircle, AlertCircle, ArrowLeft } from 'lucide-react'
 import { validateLogin } from '../../utils/auth'
 
-const Login = ({ onLogin, onSwitchToSignup }) => {
+const Login = ({ onLogin, onSwitchToSignup, onBack }) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -34,6 +34,17 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
+      {/* Back Button */}
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        onClick={onBack}
+        className="absolute top-6 left-6 p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors flex items-center space-x-2 text-slate-400 hover:text-slate-200 z-20"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm font-medium">Back</span>
+      </motion.button>
+
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div

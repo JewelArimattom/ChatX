@@ -10,13 +10,46 @@ import {
   Bookmark,
   MoreHorizontal,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User
 } from 'lucide-react'
 import { stories, posts } from '../../data/mockData'
+import StoryViewer from '../Story/StoryViewer'
 
-const SocialFeed = () => {
+const SocialFeed = ({ onProfileClick }) => {
   const [likedPosts, setLikedPosts] = useState(new Set([1, 3, 5]))
   const [savedPosts, setSavedPosts] = useState(new Set())
+  const [selectedStory, setSelectedStory] = useState(null)
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0)
+
+  // Filter out stories that have content (not "your story")
+  const viewableStories = stories.filter(s => s.content)
+
+  const openStory = (story) => {
+    const index = viewableStories.findIndex(s => s.id === story.id)
+    setCurrentStoryIndex(index)
+    setSelectedStory(viewableStories[index])
+  }
+
+  const handleNextStory = () => {
+    if (currentStoryIndex < viewableStories.length - 1) {
+      const nextIndex = currentStoryIndex + 1
+      setCurrentStoryIndex(nextIndex)
+      setSelectedStory(viewableStories[nextIndex])
+    }
+  }
+
+  const handlePrevStory = () => {
+    if (currentStoryIndex > 0) {
+      const prevIndex = currentStoryIndex - 1
+      setCurrentStoryIndex(prevIndex)
+      setSelectedStory(viewableStories[prevIndex])
+    }
+  }
+
+  const closeStory = () => {
+    setSelectedStory(null)
+  }
 
   const toggleLike = (postId) => {
     setLikedPosts(prev => {
@@ -73,9 +106,10 @@ const SocialFeed = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={onProfileClick}
               className="relative p-2 rounded-lg hover:bg-slate-800 transition-colors"
             >
-              <MessageIcon className="w-6 h-6 text-slate-400" />
+              <User className="w-6 h-6 text-slate-400" />
             </motion.button>
 
             <motion.button
@@ -95,7 +129,7 @@ const SocialFeed = () => {
       <div className="px-8 py-6 border-b border-slate-800">
         <h2 className="text-lg font-semibold text-slate-100 mb-4">Stories</h2>
         <div className="relative">
-          <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
             {stories.map((story, index) => (
               <motion.div
                 key={story.id}
@@ -103,7 +137,8 @@ const SocialFeed = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ scale: 1.05 }}
-                className="flex-shrink-0 cursor-pointer"
+                onClick={() => story.content && openStory(story)}
+                className="cursor-pointer"
               >
                 <div className="relative">
                   {story.id === 'your-story' ? (
@@ -139,7 +174,7 @@ const SocialFeed = () => {
         <div className="px-8 py-6">
           <h2 className="text-lg font-semibold text-slate-100 mb-6">Feed</h2>
           
-          <div className="space-y-6 max-w-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {posts.map((post, index) => (
               <motion.div
                 key={post.id}
@@ -273,6 +308,20 @@ const SocialFeed = () => {
           </div>
         </div>
       </div>
+
+      {/* Story Viewer */}
+      <AnimatePresence>
+        {selectedStory && (
+          <StoryViewer
+            story={selectedStory}
+            onClose={closeStory}
+            onNext={handleNextStory}
+            onPrev={handlePrevStory}
+            hasNext={currentStoryIndex < viewableStories.length - 1}
+            hasPrev={currentStoryIndex > 0}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

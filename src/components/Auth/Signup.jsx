@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, User, Sparkles, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react'
 import { saveUser } from '../../utils/auth'
 
-const Signup = ({ onSignup, onSwitchToLogin }) => {
+const Signup = ({ onSignup, onSwitchToLogin, onBack }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -69,6 +69,17 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 overflow-y-auto">
+      {/* Back Button */}
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        onClick={onBack}
+        className="absolute top-6 left-6 p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors flex items-center space-x-2 text-slate-400 hover:text-slate-200 z-20"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm font-medium">Back</span>
+      </motion.button>
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-20 left-20 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl"

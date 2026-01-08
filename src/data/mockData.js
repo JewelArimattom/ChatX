@@ -209,6 +209,81 @@ export const posts = [
     caption: "Adventure awaits those who seek it",
     timestamp: "8h ago",
     liked: true
+  },
+  {
+    id: 6,
+    user: {
+      name: "Emma Watson",
+      username: "@emma_explore",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+      verified: true
+    },
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&h=600&fit=crop",
+    likes: 678,
+    comments: 92,
+    caption: "Nature is the best therapy 🌲",
+    timestamp: "9h ago",
+    liked: false
+  },
+  {
+    id: 7,
+    user: {
+      name: "David Park",
+      username: "@david_shots",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
+      verified: false
+    },
+    image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=600&fit=crop",
+    likes: 412,
+    comments: 45,
+    caption: "Speed and style 🏎️",
+    timestamp: "10h ago",
+    liked: false
+  },
+  {
+    id: 8,
+    user: {
+      name: "Olivia Martinez",
+      username: "@olivia_foodie",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Olivia",
+      verified: true
+    },
+    image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&h=600&fit=crop",
+    likes: 834,
+    comments: 121,
+    caption: "Food is love made visible 🍜",
+    timestamp: "11h ago",
+    liked: true
+  },
+  {
+    id: 9,
+    user: {
+      name: "James Wilson",
+      username: "@james_fitness",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=James",
+      verified: false
+    },
+    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=600&fit=crop",
+    likes: 567,
+    comments: 78,
+    caption: "Push yourself because no one else will 💪",
+    timestamp: "12h ago",
+    liked: false
+  },
+  {
+    id: 10,
+    user: {
+      name: "Sophia Lee",
+      username: "@sophia_travel",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophia",
+      verified: true
+    },
+    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&h=600&fit=crop",
+    likes: 923,
+    comments: 145,
+    caption: "Sunsets are proof that endings can be beautiful ☀️",
+    timestamp: "1d ago",
+    liked: true
   }
 ];
 
@@ -229,6 +304,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sonya",
       hasStory: true,
       viewed: false
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=1400&fit=crop",
+      text: "Living my best life ✨",
+      timestamp: "2h ago"
     }
   },
   {
@@ -238,6 +319,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Adam",
       hasStory: true,
       viewed: false
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=1400&fit=crop",
+      text: "Concert night! 🎵",
+      timestamp: "3h ago"
     }
   },
   {
@@ -247,6 +334,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Andrew",
       hasStory: true,
       viewed: true
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1400&fit=crop",
+      text: "Golden hour vibes 🌅",
+      timestamp: "5h ago"
     }
   },
   {
@@ -256,6 +349,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Nicole",
       hasStory: true,
       viewed: false
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=1400&fit=crop",
+      text: "Beach day 🏖️",
+      timestamp: "6h ago"
     }
   },
   {
@@ -265,6 +364,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ashley",
       hasStory: true,
       viewed: true
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=1400&fit=crop",
+      text: "Nature therapy 🌲",
+      timestamp: "8h ago"
     }
   },
   {
@@ -274,6 +379,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
       hasStory: true,
       viewed: false
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1400&fit=crop",
+      text: "Adventure time! 🏔️",
+      timestamp: "10h ago"
     }
   },
   {
@@ -283,6 +394,12 @@ export const stories = [
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Damian",
       hasStory: true,
       viewed: true
+    },
+    content: {
+      type: "image",
+      url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=1400&fit=crop",
+      text: "Speed demon 🏎️",
+      timestamp: "12h ago"
     }
   }
 ];

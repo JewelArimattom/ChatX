@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import ChatPanel from './ChatPanel'
 import SocialFeed from './SocialFeed'
 
-const Dashboard = ({ onChatSelect, onLogout }) => {
+const Dashboard = ({ onChatSelect, onLogout, onProfileClick }) => {
   return (
     <div className="h-full w-full flex bg-slate-950">
       {/* Left Side - Chat Panel */}
@@ -22,7 +22,7 @@ const Dashboard = ({ onChatSelect, onLogout }) => {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="hidden md:flex flex-1 overflow-hidden"
       >
-        <SocialFeed />
+        <SocialFeed onProfileClick={onProfileClick} />
       </motion.div>
     </div>
   )
