@@ -13,10 +13,10 @@ import {
   Search,
   Image as ImageIcon
 } from 'lucide-react'
-import { messages as mockMessages } from '../../data/mockData'
+import { listenToMessages, sendMessage } from '../../services/chat'
 
-const ChatConversation = ({ chat, onBack }) => {
-  const [messages, setMessages] = useState(mockMessages)
+const ChatConversation = ({ chat, currentUser, onBack }) => {
+  const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef(null)
@@ -29,39 +29,44 @@ const ChatConversation = ({ chat, onBack }) => {
     scrollToBottom()
   }, [messages])
 
-  const handleSend = (e) => {
-    e.preventDefault()
-    if (newMessage.trim()) {
-      const message = {
-        id: messages.length + 1,
-        sender: 'me',
-        text: newMessage,
-        timestamp: new Date().toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit', 
-          hour12: true 
-        })
+  useEffect(() => {
+    if (!chat?.id) return
+    const unsub = listenToMessages({
+      conversationId: chat.id,
+      onMessages: (msgs) => {
+        setMessages(msgs)
       }
-      setMessages([...messages, message])
-      setNewMessage('')
-      
-      // Simulate typing indicator
-      setIsTyping(true)
-      setTimeout(() => {
-        setIsTyping(false)
-        setMessages(prev => [...prev, {
-          id: prev.length + 1,
-          sender: 'them',
-          text: 'That sounds great! 👍',
-          timestamp: new Date().toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit', 
-            hour12: true 
-          }),
-          avatar: chat.avatar
-        }])
-      }, 2000)
+    })
+    return () => unsub?.()
+  }, [chat?.id])
+
+  const formatTime = (ts) => {
+    try {
+      const d = ts?.toDate ? ts.toDate() : ts instanceof Date ? ts : null
+      if (!d) return ''
+      return d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+    } catch {
+      return ''
     }
+  }
+
+  const handleSend = async (e) => {
+    e.preventDefault()
+    const text = newMessage.trim()
+    if (!text) return
+    if (!currentUser?.uid || !chat?.id) return
+
+    setNewMessage('')
+    setIsTyping(false)
+    await sendMessage({
+      conversationId: chat.id,
+      senderId: currentUser.uid,
+      text
+    })
   }
 
   return (
@@ -151,35 +156,37 @@ const ChatConversation = ({ chat, onBack }) => {
           </div>
 
           {/* Messages */}
-          {messages.map((message, index) => (
+          {messages.map((message, index) => {
+            const isMe = message.senderId === currentUser?.uid
+            return (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`flex items-end space-x-2 max-w-[70%] ${
-                message.sender === 'me' ? 'flex-row-reverse space-x-reverse' : 'flex-row'
+                isMe ? 'flex-row-reverse space-x-reverse' : 'flex-row'
               }`}>
-                {message.sender === 'them' && (
+                {!isMe && (
                   <img
-                    src={message.avatar}
+                    src={chat.avatar}
                     alt="Avatar"
                     className="w-8 h-8 rounded-full flex-shrink-0"
                   />
                 )}
-                <div className={`flex flex-col ${message.sender === 'me' ? 'items-end' : 'items-start'}`}>
-                  <div className={message.sender === 'me' ? 'chat-bubble-sent' : 'chat-bubble-received'}>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  <div className={isMe ? 'chat-bubble-sent' : 'chat-bubble-received'}>
                     <p className="text-sm leading-relaxed">{message.text}</p>
                   </div>
                   <span className="text-xs text-slate-500 mt-1 px-2">
-                    {message.timestamp}
+                    {formatTime(message.createdAt)}
                   </span>
                 </div>
               </div>
             </motion.div>
-          ))}
+          )})}
 
           {/* Typing indicator */}
           <AnimatePresence>

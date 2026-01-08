@@ -1,116 +1,114 @@
-// Authentication utility functions
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 
-const AUTH_STORAGE_KEY = 'chatx_users'
-const SESSION_STORAGE_KEY = 'chatx_current_user'
-const EXPIRY_DAYS = 2
+const userToSessionUser = (firebaseUser, profile) => {
+  if (!firebaseUser) return null
 
-// Get all users from localStorage
-export const getStoredUsers = () => {
-  try {
-    const users = localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!users) return []
-    
-    const parsedUsers = JSON.parse(users)
-    const now = new Date().getTime()
-    
-    // Filter out expired users
-    const validUsers = parsedUsers.filter(user => {
-      const createdAt = new Date(user.createdAt).getTime()
-      const expiryTime = createdAt + (EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-      return now < expiryTime
-    })
-    
-    // Update localStorage with only valid users
-    if (validUsers.length !== parsedUsers.length) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(validUsers))
-    }
-    
-    return validUsers
-  } catch (error) {
-    console.error('Error getting stored users:', error)
-    return []
+  const displayName = profile?.displayName || firebaseUser.displayName || 'User'
+  const avatar =
+    profile?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`
+
+  return {
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid, // kept for backwards compatibility
+    name: displayName,
+    email: firebaseUser.email || profile?.email || '',
+    avatar
   }
 }
 
-// Save a new user to localStorage
-export const saveUser = (userData) => {
+const ensureUserProfile = async (firebaseUser, displayNameOverride) => {
+  const ref = doc(db, 'users', firebaseUser.uid)
+  const snap = await getDoc(ref)
+  if (snap.exists()) return snap.data()
+
+  const displayName =
+    displayNameOverride || firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User'
+  const profile = {
+    uid: firebaseUser.uid,
+    displayName,
+    email: firebaseUser.email || '',
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
+    createdAt: serverTimestamp()
+  }
+  await setDoc(ref, profile)
+  return profile
+}
+
+// Backwards-compatible no-op for old localStorage behavior
+export const clearExpiredUsers = () => {}
+
+// Backwards-compatible helper (not used anymore)
+export const getStoredUsers = async () => []
+
+export const saveUser = async (userData) => {
   try {
-    const users = getStoredUsers()
-    
-    // Check if email already exists
-    const existingUser = users.find(u => u.email === userData.email)
-    if (existingUser) {
-      return { success: false, error: 'Email already registered' }
-    }
-    
-    // Create new user with timestamp
-    const newUser = {
-      id: Date.now().toString(),
-      name: userData.name,
-      email: userData.email,
-      password: userData.password, // In production, this should be hashed
-      createdAt: new Date().toISOString(),
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`
-    }
-    
-    users.push(newUser)
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(users))
-    
-    return { success: true, user: newUser }
+    const cred = await createUserWithEmailAndPassword(auth, userData.email, userData.password)
+    const profile = await ensureUserProfile(cred.user, userData.name)
+    return { success: true, user: userToSessionUser(cred.user, profile) }
   } catch (error) {
-    console.error('Error saving user:', error)
-    return { success: false, error: 'Failed to save user' }
+    const msg =
+      error?.code === 'auth/email-already-in-use'
+        ? 'Email already registered'
+        : error?.message || 'Failed to create account'
+    return { success: false, error: msg }
   }
 }
 
-// Validate login credentials
-export const validateLogin = (email, password) => {
+export const validateLogin = async (email, password) => {
   try {
-    const users = getStoredUsers()
-    const user = users.find(u => u.email === email && u.password === password)
-    
-    if (user) {
-      // Save current session
-      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        loggedInAt: new Date().toISOString()
-      }))
-      return { success: true, user }
-    }
-    
-    return { success: false, error: 'Invalid email or password' }
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+    const profile = await ensureUserProfile(cred.user)
+    return { success: true, user: userToSessionUser(cred.user, profile) }
   } catch (error) {
-    console.error('Error validating login:', error)
-    return { success: false, error: 'Login failed' }
+    const msg =
+      error?.code === 'auth/invalid-credential'
+        ? 'Invalid email or password'
+        : error?.message || 'Login failed'
+    return { success: false, error: msg }
   }
 }
 
-// Get current logged-in user
+// In Firebase, auth state is async; keep this as a lightweight getter.
 export const getCurrentUser = () => {
-  try {
-    const session = sessionStorage.getItem(SESSION_STORAGE_KEY)
-    return session ? JSON.parse(session) : null
-  } catch (error) {
-    console.error('Error getting current user:', error)
-    return null
+  const u = auth.currentUser
+  if (!u) return null
+  return {
+    uid: u.uid,
+    id: u.uid,
+    name: u.displayName || u.email?.split('@')[0] || 'User',
+    email: u.email || '',
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+      u.displayName || u.email?.split('@')[0] || 'User'
+    )}`
   }
 }
 
-// Logout user
-export const logoutUser = () => {
+export const onAuthChange = (callback) => {
+  return onAuthStateChanged(auth, async (firebaseUser) => {
+    if (!firebaseUser) {
+      callback(null)
+      return
+    }
+
+    const profile = await ensureUserProfile(firebaseUser)
+    callback(userToSessionUser(firebaseUser, profile))
+  })
+}
+
+export const logoutUser = async () => {
   try {
-    sessionStorage.removeItem(SESSION_STORAGE_KEY)
+    await signOut(auth)
     return { success: true }
   } catch (error) {
     console.error('Error logging out:', error)
     return { success: false }
   }
-}
-
-// Clear expired users (can be called on app init)
-export const clearExpiredUsers = () => {
-  getStoredUsers() // This will automatically clear expired users
 }

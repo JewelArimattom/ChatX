@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import ChatPanel from './ChatPanel'
 import SocialFeed from './SocialFeed'
 
-const Dashboard = ({ onChatSelect, onLogout }) => {
+const Dashboard = ({ currentUser, onChatSelect, onLogout }) => {
   return (
     <div className="h-full w-full flex bg-slate-950">
       {/* Left Side - Chat Panel */}
@@ -12,7 +12,7 @@ const Dashboard = ({ onChatSelect, onLogout }) => {
         transition={{ duration: 0.5 }}
         className="w-full md:w-96 lg:w-[420px] flex-shrink-0 border-r border-slate-800"
       >
-        <ChatPanel onChatSelect={onChatSelect} onLogout={onLogout} />
+        <ChatPanel currentUser={currentUser} onChatSelect={onChatSelect} onLogout={onLogout} />
       </motion.div>
 
       {/* Right Side - Social Feed */}

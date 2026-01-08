@@ -3,21 +3,25 @@ import Login from './components/Auth/Login'
 import Signup from './components/Auth/Signup'
 import Dashboard from './components/Dashboard/Dashboard'
 import ChatConversation from './components/Chat/ChatConversation'
-import { getCurrentUser, logoutUser, clearExpiredUsers } from './utils/auth'
+import { logoutUser, onAuthChange } from './utils/auth'
 
 function App() {
   const [currentView, setCurrentView] = useState('login') // login, signup, dashboard, chat
   const [selectedChat, setSelectedChat] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
 
-  // Check for existing session on mount
+  // Firebase auth session on mount
   useEffect(() => {
-    clearExpiredUsers() // Clean up expired users
-    const user = getCurrentUser()
-    if (user) {
+    const unsub = onAuthChange((user) => {
       setCurrentUser(user)
-      setCurrentView('dashboard')
-    }
+      if (user) {
+        setCurrentView('dashboard')
+      } else {
+        setCurrentView('login')
+        setSelectedChat(null)
+      }
+    })
+    return () => unsub?.()
   }, [])
 
   const handleLogin = (user) => {
@@ -42,9 +46,6 @@ function App() {
 
   const handleLogout = () => {
     logoutUser()
-    setCurrentUser(null)
-    setCurrentView('login')
-    setSelectedChat(null)
   }
 
   return (
@@ -74,6 +75,7 @@ function App() {
       {currentView === 'chat' && selectedChat && (
         <ChatConversation 
           chat={selectedChat}
+          currentUser={currentUser}
           onBack={handleBackToDashboard}
         />
       )}

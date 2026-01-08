@@ -22,7 +22,7 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
     if (error) setError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess('')
@@ -49,21 +49,23 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
     
     setLoading(true)
     
-    const result = saveUser({
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      password: formData.password
-    })
-    
-    setLoading(false)
-    
-    if (result.success) {
-      setSuccess('Account created successfully! Redirecting...')
-      setTimeout(() => {
-        onSignup(result.user)
-      }, 1500)
-    } else {
-      setError(result.error || 'Failed to create account')
+    try {
+      const result = await saveUser({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      })
+      
+      if (result.success) {
+        setSuccess('Account created successfully! Redirecting...')
+        setTimeout(() => {
+          onSignup(result.user)
+        }, 1500)
+      } else {
+        setError(result.error || 'Failed to create account')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 

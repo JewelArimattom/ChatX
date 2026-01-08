@@ -9,7 +9,7 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     
@@ -20,15 +20,15 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
     
     setLoading(true)
     
-    // Validate credentials
-    const result = validateLogin(email.trim().toLowerCase(), password)
-    
-    setLoading(false)
-    
-    if (result.success) {
-      onLogin(result.user)
-    } else {
-      setError(result.error || 'Login failed')
+    try {
+      const result = await validateLogin(email.trim().toLowerCase(), password)
+      if (result.success) {
+        onLogin(result.user)
+      } else {
+        setError(result.error || 'Login failed')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
