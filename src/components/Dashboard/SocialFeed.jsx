@@ -89,7 +89,7 @@ const SocialFeed = ({ onProfileClick }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-900">
+    <div className="h-full w-full flex flex-col bg-slate-900 overflow-hidden">
       {/* Top Navigation */}
       <div className="px-8 py-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center justify-between">

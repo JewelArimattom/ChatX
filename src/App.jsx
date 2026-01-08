@@ -38,8 +38,9 @@ function App() {
   }
 
   const handleBackToDashboard = () => {
-    setSelectedChat(null)
     setCurrentView('dashboard')
+    // Clear selected chat after view change to avoid any race conditions
+    setTimeout(() => setSelectedChat(null), 0)
   }
 
   const handleLogout = () => {
@@ -56,11 +57,12 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-950">
       {currentView === 'landing' && (
-        <LandingPage onGetStarted={() => setCurrentView('login')} />
+        <LandingPage key="landing" onGetStarted={() => setCurrentView('login')} />
       )}
       
       {currentView === 'login' && (
         <Login 
+          key="login"
           onLogin={handleLogin} 
           onSwitchToSignup={() => setCurrentView('signup')}
           onBack={() => setCurrentView('landing')}
@@ -69,6 +71,7 @@ function App() {
       
       {currentView === 'signup' && (
         <Signup 
+          key="signup"
           onSignup={handleSignup} 
           onSwitchToLogin={() => setCurrentView('login')}
           onBack={() => setCurrentView('landing')}
@@ -77,6 +80,7 @@ function App() {
       
       {currentView === 'dashboard' && (
         <Dashboard 
+          key="dashboard"
           currentUser={currentUser}
           onChatSelect={handleChatSelect}
           onLogout={handleLogout}
@@ -86,13 +90,14 @@ function App() {
       
       {currentView === 'chat' && selectedChat && (
         <ChatConversation 
+          key={`chat-${selectedChat.id}`}
           chat={selectedChat}
           onBack={handleBackToDashboard}
         />
       )}
 
       {currentView === 'profile' && (
-        <ProfilePage onBack={handleBackToDashboard} />
+        <ProfilePage key="profile" onBack={handleBackToDashboard} />
       )}
     </div>
   )

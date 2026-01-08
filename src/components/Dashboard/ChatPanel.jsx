@@ -58,7 +58,7 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
   }, [currentUser])
 
   const filteredChats = chats.filter(chat =>
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (chat.name || chat.otherUser?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleStartChat = async (user) => {
@@ -96,7 +96,7 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-900">
+    <div className="h-full w-full flex flex-col bg-slate-900 overflow-hidden">
       {/* Header */}
       <div className="px-6 py-5 border-b border-slate-800">
         <div className="flex items-center justify-between mb-4">
