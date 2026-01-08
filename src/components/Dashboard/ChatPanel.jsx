@@ -12,7 +12,7 @@ import {
   User,
   Users
 } from 'lucide-react'
-import { listenToUserChats, addOrUpdateUser, listenToUsers, createOrGetDirectChat } from '../../services/chatService'
+import { listenToUserChats, addOrUpdateUser, listenToUsers, createOrGetDirectChat, listenToAllGroups, joinGroupChat } from '../../services/chatService'
 import NewChatModal from '../Chat/NewChatModal'
 
 const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
@@ -21,6 +21,7 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
   const [showNewChat, setShowNewChat] = useState(false)
   const [chats, setChats] = useState([])
   const [allUsers, setAllUsers] = useState([])
+  const [allGroups, setAllGroups] = useState([])
 
   useEffect(() => {
     if (!currentUser) return
@@ -44,9 +45,15 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
       setAllUsers(filteredUsers)
     })
 
+    // Listen to all groups
+    const unsubscribeGroups = listenToAllGroups((groups) => {
+      setAllGroups(groups)
+    })
+
     return () => {
       unsubscribeChats()
       unsubscribeUsers()
+      unsubscribeGroups()
     }
   }, [currentUser])
 
@@ -66,6 +73,25 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
       })
     } catch (error) {
       console.error('Error starting chat:', error)
+    }
+  }
+
+  const handleJoinGroup = async (group) => {
+    try {
+      const isParticipant = group.participants?.includes(currentUser.id)
+      if (!isParticipant) {
+        await joinGroupChat(group.id, currentUser.id)
+      }
+      onChatSelect({
+        id: group.id,
+        type: 'group',
+        name: group.name,
+        description: group.description,
+        avatar: group.avatar,
+        participants: group.participants
+      })
+    } catch (error) {
+      console.error('Error joining group:', error)
     }
   }
 
@@ -168,110 +194,167 @@ const ChatPanel = ({ currentUser, onChatSelect, onLogout }) => {
 
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-3">
-        {chats.length === 0 ? (
-          <div className="py-4">
-            <div className="text-center mb-6">
-              <MessageCircle className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-slate-300 mb-1">No chats yet</h3>
-              <p className="text-sm text-slate-500">Start a conversation with someone</p>
+        {/* Your Chats */}
+        {chats.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 px-3 mb-3">
+              <MessageCircle className="w-4 h-4 text-primary-400" />
+              <h4 className="text-sm font-semibold text-slate-400">Your Chats ({chats.length})</h4>
             </div>
-            
-            {/* Available Users */}
-            {allUsers.length > 0 && (
-              <div>
-                <div className="flex items-center space-x-2 px-3 mb-3">
-                  <Users className="w-4 h-4 text-slate-500" />
-                  <h4 className="text-sm font-semibold text-slate-400">Available Users ({allUsers.length})</h4>
-                </div>
-                <div className="space-y-1">
-                  {allUsers.slice(0, 10).map((user, index) => (
-                    <motion.button
-                      key={user.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.02 }}
-                      onClick={() => handleStartChat(user)}
-                      className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
-                               cursor-pointer transition-all group"
-                    >
+            <div className="space-y-1">
+              {filteredChats.map((chat, index) => {
+                const isGroup = chat.type === 'group'
+                const displayName = isGroup ? chat.name : (chat.otherUser?.name || 'Unknown')
+                const displayAvatar = isGroup ? chat.avatar : (chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`)
+                
+                return (
+                  <motion.div
+                    key={chat.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => onChatSelect(chat)}
+                    className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
+                             cursor-pointer transition-all group"
+                  >
+                    <div className="relative flex-shrink-0">
                       <img
-                        src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
-                        alt={user.name}
+                        src={displayAvatar}
+                        alt={displayName}
                         className="w-12 h-12 rounded-full ring-2 ring-slate-700 group-hover:ring-primary-500 transition-all"
                       />
-                      <div className="flex-1 text-left">
-                        <h3 className="font-semibold text-slate-100">{user.name}</h3>
-                        <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                      {isGroup && (
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full 
+                                      border-2 border-slate-900 flex items-center justify-center">
+                          <User className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-100 truncate">{displayName}</h3>
+                      <p className="text-sm text-slate-400 truncate">{chat.lastMessage || 'No messages yet'}</p>
+                    </div>
+                    {chat.lastMessageTime && (
+                      <div className="flex-shrink-0 text-xs text-slate-500">
+                        {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
-                    </motion.button>
-                  ))}
-                  {allUsers.length > 10 && (
-                    <button
-                      onClick={() => setShowNewChat(true)}
-                      className="w-full py-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
-                    >
-                      View all {allUsers.length} users
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
-        ) : (
-          <div className="space-y-1">
-            {chats.map((chat, index) => {
-              const isGroup = chat.type === 'group'
-              const displayName = isGroup ? chat.name : (chat.otherUser?.name || 'Unknown')
-              const displayAvatar = isGroup ? chat.avatar : (chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`)
-              
-              return (
-                <motion.div
-                  key={chat.id}
+        )}
+
+        {/* Available Users */}
+        {allUsers.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 px-3 mb-3">
+              <User className="w-4 h-4 text-green-400" />
+              <h4 className="text-sm font-semibold text-slate-400">Available Users ({allUsers.length})</h4>
+            </div>
+            <div className="space-y-1">
+              {allUsers.slice(0, 5).map((user, index) => (
+                <motion.button
+                  key={user.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.02 }}
-                  onClick={() => onChatSelect(chat)}
-                  className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
+                  onClick={() => handleStartChat(user)}
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
                            cursor-pointer transition-all group"
                 >
-                  {/* Avatar */}
-                  <div className="relative flex-shrink-0">
-                    <img
-                      src={displayAvatar}
-                      alt={displayName}
-                      className="w-12 h-12 rounded-full ring-2 ring-slate-700 group-hover:ring-primary-500 transition-all"
-                    />
-                    {isGroup && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary-500 rounded-full 
+                  <img
+                    src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full ring-2 ring-slate-700 group-hover:ring-green-500 transition-all"
+                  />
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold text-slate-100 text-sm">{user.name}</h3>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </motion.button>
+              ))}
+              {allUsers.length > 5 && (
+                <button
+                  onClick={() => setShowNewChat(true)}
+                  className="w-full py-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                >
+                  View all {allUsers.length} users
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Available Groups */}
+        {allGroups.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 px-3 mb-3">
+              <Users className="w-4 h-4 text-purple-400" />
+              <h4 className="text-sm font-semibold text-slate-400">Available Groups ({allGroups.length})</h4>
+            </div>
+            <div className="space-y-1">
+              {allGroups.slice(0, 5).map((group, index) => {
+                const isParticipant = group.participants?.includes(currentUser?.id)
+                const memberCount = group.participants?.length || 0
+                
+                return (
+                  <motion.button
+                    key={group.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => handleJoinGroup(group)}
+                    className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 
+                             cursor-pointer transition-all group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={group.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`}
+                        alt={group.name}
+                        className="w-10 h-10 rounded-full ring-2 ring-slate-700 group-hover:ring-purple-500 transition-all"
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-purple-500 rounded-full 
                                     border-2 border-slate-900 flex items-center justify-center">
-                        <User className="w-3 h-3 text-white" />
+                        <Users className="w-2.5 h-2.5 text-white" />
                       </div>
-                    )}
-                  </div>
-
-                  {/* Chat info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-1 mb-1">
-                      <h3 className="font-semibold text-slate-100 truncate">
-                        {displayName}
-                      </h3>
                     </div>
-                    <p className="text-sm text-slate-400 truncate">
-                      {chat.lastMessage || 'No messages yet'}
-                    </p>
-                  </div>
-
-                  {/* Timestamp */}
-                  {chat.lastMessageTime && (
-                    <div className="flex-shrink-0 text-xs text-slate-500">
-                      {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-slate-100 text-sm">{group.name}</h3>
+                        {isParticipant && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-primary-500/20 text-primary-400 text-[10px] font-medium">
+                            Joined
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
                     </div>
-                  )}
-                </motion.div>
-              )
-            })}
+                  </motion.button>
+                )
+              })}
+              {allGroups.length > 5 && (
+                <button
+                  onClick={() => setShowNewChat(true)}
+                  className="w-full py-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                >
+                  View all {allGroups.length} groups
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State - only when absolutely nothing */}
+        {chats.length === 0 && allUsers.length === 0 && allGroups.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-6">
+            <MessageCircle className="w-16 h-16 text-slate-700 mb-4" />
+            <h3 className="text-lg font-semibold text-slate-300 mb-2">Welcome to ChatX!</h3>
+            <p className="text-sm text-slate-500 mb-4">Click "New Chat" to start a conversation</p>
           </div>
         )}
       </div>

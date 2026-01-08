@@ -60,85 +60,107 @@ const ChatConversation = ({ chat, onBack }) => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-slate-900">
+    <div className="h-full w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Chat Header */}
-      <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="px-4 py-3 border-b border-slate-800/50 bg-slate-900/90 backdrop-blur-xl shadow-lg">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex items-center space-x-3">
             <motion.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, backgroundColor: 'rgba(51, 65, 85, 0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={onBack}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-xl bg-slate-800/50 transition-all"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-400" />
+              <ArrowLeft className="w-5 h-5 text-slate-300" />
             </motion.button>
 
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <img
+                <motion.img
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
                   src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.name}`}
                   alt={chat.name || chat.otherUser?.name}
-                  className="w-11 h-11 rounded-full ring-2 ring-slate-700"
+                  className="w-12 h-12 rounded-full ring-2 ring-primary-500/30 shadow-lg"
                 />
+                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-slate-900 shadow-lg" />
               </div>
               <div>
-                <div className="flex items-center space-x-1">
-                  <h2 className="font-semibold text-slate-100">
-                    {chat.type === 'group' ? chat.name : (chat.otherUser?.name || chat.name)}
-                  </h2>
+                <h2 className="font-bold text-lg text-slate-100 tracking-tight">
+                  {chat.type === 'group' ? chat.name : (chat.otherUser?.name || chat.name)}
+                </h2>
+                <div className="flex items-center space-x-1.5">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <p className="text-xs text-green-400 font-medium">
+                    {chat.type === 'group' ? `${(chat.participants || []).length} members` : 'Online'}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  {chat.type === 'group' ? `${(chat.participants || []).length} members` : 'Active now'}
-                </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <motion.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowAudioCall(true)}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-xl transition-all"
             >
-              <Phone className="w-5 h-5 text-slate-400" />
+              <Phone className="w-5 h-5 text-green-400" />
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowVideoCall(true)}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-xl transition-all"
             >
-              <Video className="w-5 h-5 text-slate-400" />
+              <Video className="w-5 h-5 text-blue-400" />
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(100, 116, 139, 0.2)' }}
               whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-xl transition-all"
             >
-              <Search className="w-5 h-5 text-slate-400" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              <MoreVertical className="w-5 h-5 text-slate-400" />
+              <Info className="w-5 h-5 text-slate-400" />
             </motion.button>
           </div>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6 bg-gradient-to-b from-slate-900 to-slate-950">
-        <div className="max-w-3xl mx-auto space-y-3">
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.03) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.03) 0%, transparent 50%)' }}>
+        <div className="max-w-3xl mx-auto space-y-4">
+          {/* Welcome message for empty chat */}
+          {messages.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-16"
+            >
+              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-500/20 to-purple-500/20 flex items-center justify-center">
+                <img
+                  src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.name}`}
+                  alt=""
+                  className="w-16 h-16 rounded-full"
+                />
+              </div>
+              <h3 className="text-xl font-bold text-slate-200 mb-2">
+                Start chatting with {chat.otherUser?.name || chat.name}
+              </h3>
+              <p className="text-slate-500 text-sm">Say hello and break the ice! 👋</p>
+            </motion.div>
+          )}
+
           {/* Date divider */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="px-4 py-1.5 rounded-full bg-slate-800/60 backdrop-blur-sm text-xs text-slate-400 font-medium">
-              Today
+          {messages.length > 0 && (
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+              <div className="px-4 py-1.5 mx-4 rounded-full bg-slate-800/80 backdrop-blur-sm text-xs text-slate-400 font-medium shadow-lg">
+                Today
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
             </div>
-          </div>
+          )}
 
           {/* Messages */}
           {messages.map((message, index) => {
@@ -152,35 +174,46 @@ const ChatConversation = ({ chat, onBack }) => {
             return (
               <motion.div
                 key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.02 }}
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.02, type: 'spring', stiffness: 500, damping: 30 }}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`flex items-end gap-2 max-w-[75%] ${
-                  isMine ? 'flex-row-reverse' : 'flex-row'
-                }`}>
+                <div className={`flex items-end gap-2.5 max-w-[80%] ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!isMine && (
-                    <img
+                    <motion.img
+                      whileHover={{ scale: 1.1 }}
                       src={chat.avatar || chat.otherUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.senderName}`}
                       alt="Avatar"
-                      className="w-8 h-8 rounded-full flex-shrink-0 ring-2 ring-slate-800"
+                      className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-slate-700/50 shadow-lg cursor-pointer"
                     />
                   )}
                   <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                     {!isMine && chat.type === 'group' && (
-                      <span className="text-xs text-slate-400 mb-1 px-3 font-medium">{message.senderName}</span>
+                      <span className="text-xs text-primary-400 mb-1.5 px-1 font-semibold">{message.senderName}</span>
                     )}
-                    <div className={`${
-                      isMine 
-                        ? 'bg-gradient-to-br from-primary-600 to-primary-500 text-white rounded-2xl rounded-br-md' 
-                        : 'bg-slate-800 text-slate-100 rounded-2xl rounded-bl-md'
-                    } px-4 py-2.5 shadow-lg max-w-full`}>
-                      <p className="text-sm leading-relaxed break-words">{message.text}</p>
+                    <motion.div
+                      whileHover={{ scale: 1.01 }}
+                      className={`${
+                        isMine 
+                          ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-purple-600 text-white rounded-2xl rounded-br-sm shadow-xl shadow-primary-500/20' 
+                          : 'bg-slate-800/90 backdrop-blur-sm text-slate-100 rounded-2xl rounded-bl-sm shadow-xl shadow-black/20 border border-slate-700/50'
+                      } px-4 py-3 max-w-full`}
+                    >
+                      <p className="text-[15px] leading-relaxed break-words">{message.text}</p>
+                    </motion.div>
+                    <div className={`flex items-center gap-1.5 mt-1.5 px-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {timeString}
+                      </span>
+                      {isMine && (
+                        <div className="flex items-center">
+                          <svg className="w-3.5 h-3.5 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-slate-500 mt-1.5 px-1">
-                      {timeString}
-                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -229,24 +262,24 @@ const ChatConversation = ({ chat, onBack }) => {
       </div>
 
       {/* Message Input */}
-      <div className="px-4 py-4 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md">
+      <div className="px-4 py-4 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/50">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-3">
+          <div className="flex items-center gap-3 p-2 rounded-2xl bg-slate-800/50 border border-slate-700/50 shadow-xl">
             {/* Attachment buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2.5 rounded-xl hover:bg-slate-800 transition-colors"
+                className="p-2.5 rounded-xl transition-all"
               >
                 <Paperclip className="w-5 h-5 text-slate-400" />
               </motion.button>
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
                 whileTap={{ scale: 0.95 }}
-                className="p-2.5 rounded-xl hover:bg-slate-800 transition-colors"
+                className="p-2.5 rounded-xl transition-all"
               >
                 <ImageIcon className="w-5 h-5 text-slate-400" />
               </motion.button>
@@ -258,28 +291,30 @@ const ChatConversation = ({ chat, onBack }) => {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="w-full px-5 py-3.5 pr-12 rounded-2xl bg-slate-800/80 border border-slate-700/50 
-                         text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 
-                         focus:ring-primary-500/50 focus:border-primary-500/50 transition-all shadow-sm"
+                placeholder="Type your message..."
+                className="w-full px-4 py-3 pr-12 rounded-xl bg-transparent text-slate-100 
+                         placeholder-slate-500 focus:outline-none text-[15px]"
               />
-              <button
+              <motion.button
                 type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 
-                         hover:bg-slate-700 rounded-lg transition-colors"
+                whileHover={{ scale: 1.1 }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 
+                         hover:bg-slate-700/50 rounded-lg transition-colors"
               >
-                <Smile className="w-5 h-5 text-slate-400" />
-              </button>
+                <Smile className="w-5 h-5 text-yellow-400" />
+              </motion.button>
             </div>
 
             {/* Send/Voice button */}
             {newMessage.trim() ? (
               <motion.button
                 type="submit"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-3 rounded-xl bg-gradient-primary text-white shadow-glow 
-                         hover:shadow-xl transition-all"
+                className="p-3 rounded-xl bg-gradient-to-r from-primary-500 to-purple-500 text-white 
+                         shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all"
               >
                 <Send className="w-5 h-5" />
               </motion.button>
@@ -288,7 +323,7 @@ const ChatConversation = ({ chat, onBack }) => {
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors"
+                className="p-3 rounded-xl bg-slate-700/50 hover:bg-slate-700 transition-colors"
               >
                 <Mic className="w-5 h-5 text-slate-400" />
               </motion.button>
